@@ -7,6 +7,11 @@ import os
 import os.path
 import subprocess
 
+DEFAULTS = """
+drawer_location=~/.branch_drawer
+root_repo_link_name=Branch_Drawer
+"""
+
 # git config hook.yourhook.yourconfigval value
 
 def get_repo_root_directory():
@@ -22,12 +27,30 @@ def get_repo_name():
     return repo_name.strip()
 
 def parse_args():
-    print("Repo Name : " + get_repo_name())
-    print("Repo root directory : " + get_repo_root_directory())
-    print("Current Branch : " + get_current_branch_name())
+
+    conf_parser = argparse.ArgumentParser(add_help=False)
+    conf_parser.add_argument('--conf-file', '-c', help='Specify the config file')
+
+    args, remaining = conf_parser.parse_known_args()
+    config = ConfigParser.RawConfigParser()
+
+    config.readfp(io.BytesIO(DEFAULTS))
+    if args.conf_file:
+        config.read([args.conf_file])
+    else:
+        create_conf()
+        config.read(CONFIG_FILES)
+
+    parser = argparse.ArgumentParser(parents=[conf_parser])
+    parser.set_defaults(**opts)
+
+    parser.add_argument('--drawer_dir', '-d', help='Drawer storage location')
+
+    args = parser.parse_args()
 
 def main():
     global CONF
+
     CONF = parse_args()
 
 if __name__ == '__main__':
