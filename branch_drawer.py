@@ -8,11 +8,18 @@ import os.path
 import subprocess
 
 DEFAULTS = """
-drawer_location=~/.branch_drawer
-root_repo_link_name=Branch_Drawer
+[branch_drawer]
+# Location of drawer repo
+drawer_dir=~/.branch_drawer.d
+# Drawer Name
+drawer_link_name=Branch_Drawer
 """
-
 # git config hook.yourhook.yourconfigval value
+def create_conf():
+    user_config = CONFIG_FILES[-1]
+    if not os.path.exists(user_config):
+        with open(user_config, 'w') as f:
+            f.write(DEFAULTS)
 
 def get_repo_root_directory():
     repo_root_directory = subprocess.check_output( "git rev-parse --show-toplevel", shell = True )
@@ -41,17 +48,24 @@ def parse_args():
         create_conf()
         config.read(CONFIG_FILES)
 
+    opts = dict(config.items('branch_drawer'))
     parser = argparse.ArgumentParser(parents=[conf_parser])
     parser.set_defaults(**opts)
 
     parser.add_argument('--drawer_dir', '-d', help='Drawer storage location')
+    parser.add_argument('--drawer_link_name', '-l', help='In repo drawer link name')
 
     args = parser.parse_args()
+    args.drawer_dir = args.drawer_dir or os.environ.get('drawer_dir') or opts['drawer_dir']
+    args.drawer_link_name = args.drawer_link_name or os.environ.get('drawer_link_name') or opts['drawer_link_name']
+
+    return args
 
 def main():
     global CONF
-
     CONF = parse_args()
+
+CONFIG_FILES = ['/etc/branch_drawer', os.path.join(os.path.expanduser('~'), '.branch_drawer') ]
 
 if __name__ == '__main__':
     main()
